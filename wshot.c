@@ -92,10 +92,16 @@ void save_png(struct frame_d *framed) {
   }
   
   FILE *file = fopen(opts.output, "wb");
-  if (!file) {
-    perror("File could not be opened.");
-    return;
+  if (opts.output == NULL || strcmp(opts.output, "-") == 0) {
+    file = stdout;
+  } else {
+    file = fopen(opts.output, "wb");
+    if (!file) {
+      perror("File could not be opened.");
+      return;
+    }
   }
+ 
   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if (!png_ptr) {
     fprintf(stderr, "Unable to create png write struct.");
