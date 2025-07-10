@@ -42,6 +42,7 @@ struct Opts {
   char* region_string;
   int cursor;
   int wait;
+  int stdout;
 };
 
 struct Opts opts;
@@ -88,11 +89,11 @@ struct wl_registry_listener reg_listener = {
 
 void save_png(struct frame_d *framed) {
   if (opts.output == NULL) {
-    opts.output = "screenshot.png";
+    opts.output = "-";
   }
   
   FILE *file = fopen(opts.output, "wb");
-  if (opts.output == NULL || strcmp(opts.output, "-") == 0) {
+  if (opts.stdout == 1) {
     file = stdout;
   } else {
     file = fopen(opts.output, "wb");
@@ -100,7 +101,8 @@ void save_png(struct frame_d *framed) {
       perror("File could not be opened.");
       return;
     }
-  }
+ }
+
  
   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if (!png_ptr) {
@@ -323,9 +325,11 @@ int main (int argc, char* argv[]) {
   }
   opts.cursor = 1;
   opts.wait = 0;
+  opts.stdout = 0;
+  opts.output = "";
   int opt;
   int x, y, w, h;
-  while((opt = getopt(argc, argv, "ho:r:w:c")) != -1) {
+  while((opt = getopt(argc, argv, "ho:r:w:cs")) != -1) {
     switch (opt) {
     case 'h':
       printf("%s", help_message);
@@ -335,6 +339,9 @@ int main (int argc, char* argv[]) {
       break;
     case 'o':
       opts.output = optarg;
+      break;
+    case 's':
+      opts.stdout = 1;
       break;
     case 'r':
       opts.region = 1;
