@@ -8,7 +8,7 @@ Work in progress: You can also check out [“How to build a simple screenshot to
 - Region selection with slurp. `wshot -r "$(slurp)"`
 - Hide cursor when screenshot. `wshot -c`
 - Output file name selection. `wshot -o <filename>`
-- Delay before taking the screenshot. `wshot -w 5 # 5 seconds`
+- Delay before taking the screenshot. `wshot -w 5 # 5 seconds`  
 You might be thinking, 'These aren't features!'
 
 Yes, these really aren't features — because for a screenshot program, these are simply all I need.
