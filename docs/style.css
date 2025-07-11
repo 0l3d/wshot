@@ -1,0 +1,280 @@
+:root {
+    /* Gruvbox Dark Palette */
+    --bg0: #282828;
+    --bg1: #3c3836;
+    --bg2: #504945;
+    --bg3: #665c54;
+    --bg4: #7c6f64;
+
+    --fg0: #fbf1c7;
+    --fg1: #ebdbb2;
+    --fg2: #d5c4a1;
+    --fg3: #bdae93;
+    --fg4: #a89984;
+
+    --red: #cc241d;
+    --green: #98971a;
+    --yellow: #d79921;
+    --blue: #458588;
+    --purple: #b16286;
+    --aqua: #689d6a;
+    --gray: #928374;
+    --orange: #d65d0e;
+
+    /* Void Linux inspired accent */
+    --void-green: #478061;
+    --void-dark: #1a1a1a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Fira Code', 'Source Code Pro', 'Inconsolata', monospace;
+    background: linear-gradient(135deg, var(--bg0), var(--bg1));
+    color: var(--fg1);
+    line-height: 1.75;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+/* Page Title */
+.title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: var(--void-green);
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+
+/* Main Content */
+#content {
+    max-width: 880px;
+    margin: auto;
+    background-color: rgba(40, 40, 40, 0.95);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--bg3);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Table of Contents --- */
+#table-of-contents {
+    background: transparent;
+    padding: 1rem 1.2rem;
+    margin-bottom: 2rem;
+    border-left: 3px solid var(--void-green);
+    border-radius: 0;
+}
+
+#table-of-contents h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--void-green);
+    margin-bottom: 1rem;
+    padding-left: 0.2rem;
+}
+
+#table-of-contents ul {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+#table-of-contents li {
+    margin: 0.4rem 0;
+    padding-left: 0.6rem;
+    border-left: 1px dashed var(--bg3);
+    color: var(--fg2);
+    font-size: 0.95rem;
+}
+
+#table-of-contents li li {
+    padding-left: 1.2rem;
+    border-left: 1px dashed var(--bg4);
+    color: var(--fg3);
+    font-size: 0.93rem;
+}
+
+#table-of-contents li li li {
+    padding-left: 1.6rem;
+    border-left: 1px dashed var(--bg4);
+    color: var(--fg4);
+    font-size: 0.9rem;
+}
+
+#table-of-contents a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+#table-of-contents a:hover {
+    color: var(--void-green);
+    text-decoration: underline;
+}
+
+/* --- Headings --- */
+h1, h2, h3, h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+h1 {
+    font-size: 1.75rem;
+    color: var(--void-green);
+    border-bottom: 2px solid var(--bg3);
+    padding-bottom: 0.25rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    color: var(--aqua);
+}
+
+h3 {
+    font-size: 1.25rem;
+    color: var(--yellow);
+}
+
+h4 {
+    font-size: 1.1rem;
+    color: var(--orange);
+}
+
+/* --- Paragraphs --- */
+p {
+    margin-bottom: 1rem;
+    text-align: justify;
+    color: var(--fg2);
+}
+
+/* --- Inline Code (=code=) --- */
+p code,
+li code {
+    background-color: #3c3836;
+    color: var(--orange);
+    padding: 0.25rem 0.4rem;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    font-family: 'Fira Code', monospace;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px var(--bg4);
+}
+
+/* --- Code Blocks --- */
+pre {
+    background: var(--void-dark);
+    border: 1px solid var(--bg3);
+    border-left: 5px solid var(--orange);
+    border-radius: 6px;
+    padding: 1.25rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+    font-size: 0.95rem;
+}
+
+code {
+    font-family: 'Fira Code', monospace;
+    color: var(--fg0);
+    font-size: 0.95rem;
+}
+
+/* --- Lists --- */
+ul, ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+li {
+    margin: 0.5rem 0;
+}
+
+/* --- Blockquotes --- */
+blockquote {
+    border-left: 4px solid var(--purple);
+    background: var(--bg1);
+    padding: 1rem 1.5rem;
+    font-style: italic;
+    color: var(--fg3);
+    border-radius: 0 6px 6px 0;
+    margin: 1.5rem 0;
+}
+
+/* --- Tables --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background: var(--bg1);
+    border-radius: 6px;
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--bg3);
+}
+
+th {
+    background: var(--bg2);
+    color: var(--void-green);
+}
+
+tr:hover {
+    background-color: var(--bg2);
+}
+
+/* --- Links --- */
+a {
+    color: var(--blue);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--void-green);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg3);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--void-green);
+}
+
+/* --- Responsive Tweaks --- */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    .title {
+        font-size: 1.75rem;
+    }
+
+    #content {
+        padding: 1.25rem;
+    }
+
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.3rem; }
+    pre { font-size: 0.85rem; }
+    code, p code, li code { font-size: 0.85rem; }
+}

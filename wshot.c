@@ -245,9 +245,6 @@ void failed(void *data, struct zwlr_screencopy_frame_v1 *frame) {
 }
 
 
-// PPM TO PNG
-void convert() {}
-
 // UNUSED CALLBACKS
 void buffer_done() {}
 void damage(void *data, struct zwlr_screencopy_frame_v1 *frame,

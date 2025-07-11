@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- 2025-07-11 Fri 03:12 -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to build a simple screenshot tool for Wayland.</title>
+<meta name="author" content="0l3d" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<meta charset="UTF-8">
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">How to build a simple screenshot tool for Wayland.</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgc71489c">1. Welcome</a>
+<ul>
+<li><a href="#org083ff02">1.1. Making a screenshot program for Wayland</a>
+<ul>
+<li><a href="#org5eeef4a">1.1.1. What is wlr-screencopy</a></li>
+</ul>
+</li>
+<li><a href="#org2f78abc">1.2. THE PROGRAM BASICS</a></li>
+<li><a href="#org5d3bb95">1.3. Connecting to Wayland Server and Registry</a></li>
+<li><a href="#orgc96416f">1.4. Registry Binding</a></li>
+<li><a href="#orga0d055d">1.5. Screenshot request to Wayland</a></li>
+<li><a href="#org9e87681">1.6. Buffer Function</a></li>
+<li><a href="#orga652a8b">1.7. Libpng implementation</a></li>
+<li><a href="#org35adc6b">1.8. Final Touches</a></li>
+</ul>
+</li>
+<li><a href="#org3538278">2. The End</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgc71489c" class="outline-2">
+<h2 id="orgc71489c"><span class="section-number-2">1.</span> Welcome</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Hello, after struggling with the Wayland API for a while, I realized that after some time it becomes understandable, and for this reason, I decided to write a simple document about it.
+</p>
+</div>
+<div id="outline-container-org083ff02" class="outline-3">
+<h3 id="org083ff02"><span class="section-number-3">1.1.</span> Making a screenshot program for Wayland</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+Required dependencies (I use Void Linux, so I wrote their names accordingly; you should find the equivalents for your own distribution):
+</p>
+<ul class="org-ul">
+<li>wayland-devel</li>
+<li>wlroots-devel</li>
+<li>wlr-screencopy-unstable-v1 protocol. (In the next section, you can find what it is and how to obtain it; this is not a distribution-specific dependency.)</li>
+</ul>
+</div>
+<div id="outline-container-org5eeef4a" class="outline-4">
+<h4 id="org5eeef4a"><span class="section-number-4">1.1.1.</span> What is wlr-screencopy</h4>
+<div class="outline-text-4" id="text-1-1-1">
+<p>
+This protocol lets clients request the compositor to copy screen content to their buffers. It’s experimental and may change incompatibly until it becomes stable.
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="orga3b3d99"></a>How can I install it or how can I get it?<br>
+<div class="outline-text-5" id="text-1-1-1-1">
+<p>
+Actually, I will give you an example from the .xml file I provided in my project; you can use it too. Of course, if you want, copies can also be found web.
+</p>
+
+<p>
+First, we will generate header and source files from the XML file I provided, to use them in our project.
+</p>
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #5a5b5a;"># </span><span style="color: #5a5b5a;">HEADER FILE </span>
+wayland-scanner client-header ./protocol/wlr-screencopy-unstable-v1.xml wlr-screencopy-unstable-v1.h
+
+<span style="color: #5a5b5a;"># </span><span style="color: #5a5b5a;">SOURCE FILE </span>
+wayland-scanner private-code ./protocol/wlr-screencopy-unstable-v1.xml wlr-screencopy-unstable-v1.c
+</pre>
+</div>
+
+<p>
+We have two files, and we will use them in our project.
+</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org2f78abc" class="outline-3">
+<h3 id="org2f78abc"><span class="section-number-3">1.2.</span> THE PROGRAM BASICS</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+Actually, working with Wayland from scratch at a low level in C is easy but takes a long time to fully understand. Right now, I still don’t even know how to handle multiple monitors. Anyway, first of all, since I don’t want to bother explaining everything to you, I’m giving you the lines you need to <code>#include</code> in your C code from the very beginning. If you really want to, and you’re not an experienced C developer, you can research them one by one.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;stdio.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;stdlib.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;string.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;unistd.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;fcntl.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;sys/mman.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;sys/stat.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;png.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;zlib.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;sys/syscall.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;wayland-client.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">&lt;linux/memfd.h&gt;</span>
+<span style="color: #c5c8c6; font-weight: bold;">#include</span> <span style="color: #b5bd68;">"./wlr-screencopy-unstable-v1.h"</span>
+</pre>
+</div>
+
+<p>
+These <code>#include</code> statements are the libraries we will use.
+</p>
+</div>
+</div>
+<div id="outline-container-org5d3bb95" class="outline-3">
+<h3 id="org5d3bb95"><span class="section-number-3">1.3.</span> Connecting to Wayland Server and Registry</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+I defined two global variables to connect to the Wayland server.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_display</span> *<span style="color: #cc6666;">display</span> = <span style="color: #de935f;">NULL</span>;
+<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_registry</span> *<span style="color: #cc6666;">registry</span> = <span style="color: #de935f;">NULL</span>;
+</pre>
+</div>
+<p>
+And along with that, I connected to the Wayland display using these functions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">int</span> <span style="color: #81a2be;">main</span>(<span style="color: #f0c674;">int</span> <span style="color: #cc6666;">argc</span>, <span style="color: #f0c674;">char</span> *<span style="color: #cc6666;">argv</span>[]) {
+  display = wl_display_connect(<span style="color: #de935f;">NULL</span>);
+  <span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>display) { <span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">ERROR CHECKING.</span>
+    fprintf(stderr, <span style="color: #b5bd68;">"Unable to connect wayland display."</span>);
+    <span style="color: #b294bb;">return</span> 1;
+  }
+}
+</pre>
+</div>
+<p>
+Now, assuming we have connected to the Wayland server, our first goal is to register objects and protocols using <code>wl_display_get_registry</code>. Additionally, we will set up a listener because there are things we need to catch!
+</p>
+
+<p>
+Again, in our main code
+</p>
+<div class="org-src-container">
+<pre class="src src-c">registry = wl_display_get_registry(display);
+<span style="color: #81a2be;">wl_registry_add_listener</span>(registry, &amp;reg_listener, <span style="color: #de935f;">NULL</span>); <span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">REGISTRY LISTENER</span>
+</pre>
+</div>
+
+<p>
+Now we have created the registry and opened a listener, but which function will this listener work with? Here is where our <code>reg_listener</code>, which we created as a <code>wl_registry_listener</code> struct, comes into play.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_registry_listener</span> <span style="color: #cc6666;">reg_listener</span> = {
+  .global = reg_glob,
+  .global_remove = reg_glob_remove,
+};
+</pre>
+</div>
+
+<p>
+Now, let's explain what <code>.global</code> and <code>.global-remove</code> are. First of all, you can create an empty function for <code>.global-remove</code> because in a small-scale program, no one will care about it. The function we assign to <code>.global</code> will handle the catch process.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc96416f" class="outline-3">
+<h3 id="orgc96416f"><span class="section-number-3">1.4.</span> Registry Binding</h3>
+<div class="outline-text-3" id="text-1-4">
+<p>
+Now, let’s start writing the function named <code>reg_glob</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">void</span> <span style="color: #81a2be;">reg_glob</span>(
+              <span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_registry</span> *<span style="color: #cc6666;">registry</span>,
+              <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">id</span>, <span style="color: #b294bb;">const</span> <span style="color: #f0c674;">char</span> *<span style="color: #cc6666;">interface</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">version</span>
+              ) {}
+</pre>
+</div>
+<p>
+First of all, our function will be defined like this.
+</p>
+
+<p>
+There are two things I will explain here: when binding the registry, we need an id, interface, and version. Actually, the struct handles the id and version for us; we only need to catch the necessary things with the interface.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">if</span> (strcmp(interface, <span style="color: #b5bd68;">"wl_output"</span>) == 0) {
+  st.output = wl_registry_bind(registry, id, &amp;wl_output_interface, version);
+}
+</pre>
+</div>
+
+<p>
+Our first piece of code — let’s explain this code first. Here, we simply catch <code>wl_output</code> using the interface and bind it to a struct named st via registry bind. And yes, we don’t actually have a struct named <code>st</code> yet — so let’s define it now.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">state</span> {
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_output</span> *<span style="color: #cc6666;">output</span>;
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_shm</span> *<span style="color: #cc6666;">shm</span>;
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_manager_v1</span> *<span style="color: #cc6666;">scrcopy</span>;
+};
+
+<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">state</span> <span style="color: #cc6666;">st</span>;
+</pre>
+</div>
+
+<p>
+Since explaining everything would take too much time, our <code>state</code> struct will look something like this. Also, we will declare <code>st</code> as a global variable.
+</p>
+
+<p>
+Now let's continue with our function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">else</span> <span style="color: #b294bb;">if</span> (strcmp(interface, <span style="color: #b5bd68;">"wl_shm"</span>) == 0) {
+ st.shm = wl_registry_bind(registry, id, &amp;wl_shm_interface, version);
+} <span style="color: #b294bb;">else</span> <span style="color: #b294bb;">if</span> (strcmp(interface, <span style="color: #b5bd68;">"zwlr_screencopy_manager_v1"</span>) == 0) {
+ st.scrcopy = wl_registry_bind(registry, id, &amp;zwlr_screencopy_manager_v1_interface, version);
+}
+</pre>
+</div>
+
+<p>
+Now we are binding <code>wl_shm</code>, which is Wayland shared memory, and then we are binding <code>screencopy</code>. As a result, we have bound everything we need.
+</p>
+
+<p>
+Now our reg<sub>glob</sub> function is complete.
+</p>
+
+<p>
+Additionally, we need to add this to our main code. 
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #81a2be;">wl_display_roundtrip</span>(display);
+</pre>
+</div>
+
+<p>
+This function synchronizes the communication between the Wayland client and server.
+</p>
+
+<p>
+Additionally, we need to perform a disconnect at the end of our main code.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #81a2be;">wl_display_disconnect</span>(display);
+<span style="color: #b294bb;">return</span> 0;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga0d055d" class="outline-3">
+<h3 id="orga0d055d"><span class="section-number-3">1.5.</span> Screenshot request to Wayland</h3>
+<div class="outline-text-3" id="text-1-5">
+<p>
+Now we have bound the necessary components. Next, our goal is to send a screenshot request to Wayland.
+Actually, this is the part where things start to get a bit complicated, as it's important to understand this section well.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">shot</span> = zwlr_screencopy_manager_v1_capture_output(st.scrcopy, 0, st.output);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>shot) { <span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">ERROR CHECKING.</span>
+  fprintf(stderr, <span style="color: #b5bd68;">"Failed to capture output\n"</span>);
+  clean(framed);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Now, the <code>wl_output</code> in the st is our output monitor, and <code>scrcopy</code> is what we need to copy the screen. You might ask what the 0 in between is; that 0 is a simple setting that specifies whether the cursor is visible or not.
+</p>
+
+<p>
+Now, we will also use a listener for this.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #81a2be;">zwlr_screencopy_frame_v1_add_listener</span>(shot, &amp;frame_l, framed);
+</pre>
+</div>
+
+<p>
+Additionally, <code>frame_l</code> should be defined this way. Since unused functions won't be of any use to us, we are required to define them and leave them empty.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">UNUSED CALLBACKS</span>
+<span style="color: #f0c674;">void</span> <span style="color: #81a2be;">buffer_done</span>() {}
+<span style="color: #f0c674;">void</span> <span style="color: #81a2be;">damage</span>(<span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>,
+            <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">x</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">y</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">width</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">height</span>) {}
+<span style="color: #f0c674;">void</span> <span style="color: #81a2be;">linux_dmabuf</span>(<span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>,
+                  <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">arg1</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">arg2</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">arg3</span>) {}
+<span style="color: #f0c674;">void</span> <span style="color: #81a2be;">flags</span>(<span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">flags</span>) {}
+<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1_listener</span> <span style="color: #cc6666;">frame_l</span> = {
+  .buffer = buffer,
+  .flags = flags,
+  .ready = ready,
+  .failed = failed,
+  .damage = damage,
+  .linux_dmabuf = linux_dmabuf,
+  .buffer_done = buffer_done,
+};
+</pre>
+</div>
+
+<p>
+Alright, let's start with our buffer function. The buffer will be the function that transfers the screen image, and the lowest level code you can see will be written here. Buckle up!
+</p>
+
+<p>
+First, we are creating a struct named <code>frame_d</code> to use in the buffer and in different places.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> {
+  <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">width</span>;
+  <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">height</span>;
+  <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">sd</span>;
+  <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">format</span>;
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_buffer</span> *<span style="color: #cc6666;">buffer</span>;
+  <span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>;
+  <span style="color: #f0c674;">size_t</span> <span style="color: #cc6666;">size</span>;
+  <span style="color: #f0c674;">int</span> <span style="color: #cc6666;">fd</span>;
+};
+</pre>
+</div>
+
+<p>
+At first glance, you can understand what each element is. <code>sd = stride</code>. I won't explain everything one by one; you can research them individually and learn their purposes based on where they are used.
+</p>
+</div>
+</div>
+<div id="outline-container-org9e87681" class="outline-3">
+<h3 id="org9e87681"><span class="section-number-3">1.6.</span> Buffer Function</h3>
+<div class="outline-text-3" id="text-1-6">
+<p>
+Now, let's move step by step to the buffer function.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">void</span> <span style="color: #81a2be;">buffer</span>(
+            <span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>,
+            <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">format</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">width</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">height</span>,
+            <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">sd</span>
+           ) {}
+</pre>
+</div>
+
+<p>
+Our function is defined like this; now let's write it out step by step, explaining its content.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span> = (<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *)data;
+
+framed-&gt;width = width;
+framed-&gt;height = height;
+framed-&gt;format = format;
+framed-&gt;sd = sd;
+framed-&gt;size = sd * height;
+</pre>
+</div>
+
+<p>
+We created a structure of type <code>frame_l</code> named <code>framed</code> and assigned it with parameters. The expression <code>sd * height</code> calculates the memory space occupied by the image. I won't go into a lengthy explanation.
+</p>
+
+<p>
+Next, we will create a memory file using system calls with <code>syscall</code>.
+</p>
+<div class="org-src-container">
+<pre class="src src-c">framed-&gt;fd = syscall(SYS_memfd_create, <span style="color: #b5bd68;">"scrshot"</span>, MFD_CLOEXEC);
+<span style="color: #b294bb;">if</span> (framed-&gt;fd == -1) {
+  fprintf(stderr, <span style="color: #b5bd68;">"memfd failed"</span>);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Now, let's set <code>framed-&gt;fd</code> to the size of <code>framed-&gt;size</code>.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">if</span> (ftruncate(framed-&gt;fd, framed-&gt;size) == -1) {
+  perror(<span style="color: #b5bd68;">"ftruncate failed"</span>);
+  close(framed-&gt;fd);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Alright, now let's map the memory area.
+</p>
+<div class="org-src-container">
+<pre class="src src-c">framed-&gt;data = mmap(<span style="color: #de935f;">NULL</span>, framed-&gt;size, PROT_READ | PROT_WRITE, MAP_SHARED, framed-&gt;fd, 0);
+<span style="color: #b294bb;">if</span> (framed-&gt;data == MAP_FAILED) {
+  perror(<span style="color: #b5bd68;">"mmap failed"</span>);
+  close(framed-&gt;fd);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+A brief error handling.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>st.shm) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Error: st.shm is NULL!\n"</span>);
+  clean(framed);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Now, let's create a shared memory pool using the <code>wl_shm_create_pool</code> function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">wl_shm_pool</span> *<span style="color: #cc6666;">pool</span> = wl_shm_create_pool(st.shm, framed-&gt;fd, framed-&gt;size);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>pool) { <span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">ERROR CHECKING</span>
+  fprintf(stderr, <span style="color: #b5bd68;">"Failed to create SHM pool\n"</span>);
+  clean(framed);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Now, let's create a shared memory buffer using the <code>wl_shm_pool_create_buffer</code> function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c">framed-&gt;buffer = wl_shm_pool_create_buffer(pool, 0, width, height, sd, format);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>framed-&gt;buffer) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Failed to create buffer\n"</span>);
+  clean(framed);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+Actually, we're almost done; we just need to write the cleanup functions and close everything.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #81a2be;">wl_shm_pool_destroy</span>(pool);
+<span style="color: #81a2be;">zwlr_screencopy_frame_v1_copy</span>(frame, framed-&gt;buffer);
+</pre>
+</div>
+
+
+<p>
+Next, we have our ready function, and before that, we embark on a journey for libpng!
+</p>
+</div>
+</div>
+<div id="outline-container-orga652a8b" class="outline-3">
+<h3 id="orga652a8b"><span class="section-number-3">1.7.</span> Libpng implementation</h3>
+<div class="outline-text-3" id="text-1-7">
+<p>
+First, we will create a function named <code>save_png</code> to use libpng cleanly.
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">void</span> <span style="color: #81a2be;">save_png</span>(<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span>) {}
+</pre>
+</div>
+
+<p>
+Now, it's going to be a long journey with libpng, but I'll go through it quickly without too many explanations. The documentation for libpng is much more comprehensive, so feel free to take a look if you want.
+</p>
+
+<p>
+First, let's open the file using <code>fopen()</code>, and then we'll create a <code>png_ptr</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">FILE</span> *<span style="color: #cc6666;">file</span> = fopen(<span style="color: #b5bd68;">"screenshot.png"</span>, <span style="color: #b5bd68;">"wb"</span>);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>file) {
+  perror(<span style="color: #b5bd68;">"File could not be opened."</span>);
+  <span style="color: #b294bb;">return</span>;
+}
+
+<span style="color: #f0c674;">png_structp</span> <span style="color: #cc6666;">png_ptr</span> = png_create_write_struct(PNG_LIBPNG_VER_STRING, <span style="color: #de935f;">NULL</span>, <span style="color: #de935f;">NULL</span>, <span style="color: #de935f;">NULL</span>);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>png_ptr) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Unable to create png write struct."</span>);
+  fclose(file);
+  <span style="color: #b294bb;">return</span>;
+}
+<span style="color: #f0c674;">png_infop</span> <span style="color: #cc6666;">info_ptr</span> = png_create_info_struct(png_ptr);
+<span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>info_ptr) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Unable to create png info struct."</span>);
+  png_destroy_write_struct(&amp;png_ptr, <span style="color: #de935f;">NULL</span>);
+  fclose(file);
+  <span style="color: #b294bb;">return</span>;
+}
+
+<span style="color: #b294bb;">if</span> (setjmp(png_jmpbuf(png_ptr))) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Failed to create png file."</span>);
+  png_destroy_write_struct(&amp;png_ptr, &amp;info_ptr);
+  fclose(file);
+  <span style="color: #b294bb;">return</span>;
+}
+</pre>
+</div>
+
+<p>
+I won't explain in detail because it's quite understandable, and if you want, you can refer to the libpng documentation, as I'm here to explain Wayland, not libpng.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #81a2be;">png_set_compression_level</span>(png_ptr, Z_DEFAULT_COMPRESSION);
+<span style="color: #81a2be;">png_set_IHDR</span>(png_ptr, info_ptr, framed-&gt;width, framed-&gt;height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+<span style="color: #81a2be;">png_write_info</span>(png_ptr, info_ptr);
+<span style="color: #f0c674;">uint32_t</span> *<span style="color: #cc6666;">pixels</span> = (<span style="color: #f0c674;">uint32_t</span> *)framed-&gt;data;
+<span style="color: #f0c674;">png_byte</span> **<span style="color: #cc6666;">row_pointers</span> = (<span style="color: #f0c674;">png_byte</span> **)malloc(<span style="color: #b294bb;">sizeof</span>(<span style="color: #f0c674;">png_byte</span> *) * framed-&gt;height);
+<span style="color: #b294bb;">for</span> (<span style="color: #f0c674;">int</span> <span style="color: #cc6666;">y</span> = 0; y &lt; framed-&gt;height;y++) {
+  row_pointers[y] = (<span style="color: #f0c674;">png_byte</span>*)malloc(png_get_rowbytes(png_ptr, info_ptr));
+  <span style="color: #b294bb;">for</span> (<span style="color: #f0c674;">int</span> <span style="color: #cc6666;">x</span> = 0;x &lt; framed-&gt;width;x++) {
+    <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">pixel</span> = pixels[y * (framed-&gt;sd / 4) + x];
+    row_pointers[y][x * 3 + 0] = (pixel &gt;&gt; 16) &amp; 0xFF;
+    row_pointers[y][x * 3 + 1] = (pixel &gt;&gt; 8) &amp; 0xFF;
+    row_pointers[y][x * 3 + 2] = pixel &amp; 0xFF;
+  }
+}
+
+<span style="color: #81a2be;">png_write_image</span>(png_ptr, row_pointers);
+<span style="color: #81a2be;">png_write_end</span>(png_ptr, <span style="color: #de935f;">NULL</span>);
+
+<span style="color: #b294bb;">for</span> (<span style="color: #f0c674;">int</span> <span style="color: #cc6666;">i</span> = 0; i &lt; framed-&gt;height;i++) {
+  free(row_pointers[i]);
+}
+<span style="color: #81a2be;">free</span>(row_pointers);
+
+png_destroy_write_struct(&amp;png_ptr, &amp;info_ptr);
+<span style="color: #81a2be;">fclose</span>(file);
+printf(<span style="color: #b5bd68;">"Screenshot saved succesfully"</span>);
+</pre>
+</div>
+
+
+<p>
+We are making a few small adjustments for PNG and performing calculations for it, that's all.
+</p>
+</div>
+</div>
+<div id="outline-container-org35adc6b" class="outline-3">
+<h3 id="org35adc6b"><span class="section-number-3">1.8.</span> Final Touches</h3>
+<div class="outline-text-3" id="text-1-8">
+<p>
+Now, let's move on to our ready function, which will be very brief. We will create a <code>framed</code> of type <code>frame_l</code> and provide parameters for <code>save_png</code>. I won't write a lengthy clean function; I'll give you a simple version, and those who are curious and want to learn can research it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">void</span> <span style="color: #81a2be;">ready</span>(
+           <span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>,
+           <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">tv_sec_hi</span>, <span style="color: #5a5b5a;">//  </span><span style="color: #5a5b5a;">REFERANCE: https://github.com/swaywm/wlroots/blob/master/examples/screencopy.c#L133</span>
+           <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">tv_sec_lo</span>, <span style="color: #f0c674;">uint32_t</span> <span style="color: #cc6666;">tv_nsec</span> <span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">REFERANCE: https://github.com/swaywm/wlroots/blob/master/examples/screencopy.c#L133</span>
+           ) {
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span> = (<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *)data;
+  save_png(framed);
+  clean(framed);
+  zwlr_screencopy_frame_v1_destroy(frame);
+  ok = 1;
+}
+</pre>
+</div>
+
+<p>
+Additionally, you should place the clean function above the failed and other functions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #f0c674;">void</span> <span style="color: #81a2be;">failed</span>(<span style="color: #f0c674;">void</span> *<span style="color: #cc6666;">data</span>, <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">zwlr_screencopy_frame_v1</span> *<span style="color: #cc6666;">frame</span>) {
+  <span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span> = (<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *)data;
+  clean(framed);
+  zwlr_screencopy_frame_v1_destroy(frame);
+}
+
+<span style="color: #5a5b5a;">// </span><span style="color: #5a5b5a;">CLEAN FUNCTION</span>
+
+<span style="color: #f0c674;">void</span> <span style="color: #81a2be;">clean</span>(<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span>) {
+  <span style="color: #b294bb;">if</span> (framed-&gt;data &amp;&amp; framed-&gt;data != MAP_FAILED ) {
+    munmap(framed-&gt;data, framed-&gt;size);
+  }
+
+  <span style="color: #b294bb;">if</span> (framed-&gt;buffer) {
+    wl_buffer_destroy(framed-&gt;buffer);
+  }
+
+  <span style="color: #b294bb;">if</span> (framed-&gt;fd &gt;= 0) {
+    close(framed-&gt;fd);
+  }
+}
+</pre>
+</div>
+
+<p>
+In your main function, add this under the <code>zwlr_screencopy_frame_v1_add_listener</code> listener
+</p>
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">while</span>(wl_display_dispatch(display) != -1) {
+  <span style="color: #b294bb;">if</span> (ok == 1) {
+    <span style="color: #b294bb;">break</span>;
+  }
+}
+</pre>
+</div>
+
+<p>
+Additionally, add this at the very beginning of your main function:
+</p>
+<div class="org-src-container">
+<pre class="src src-c">memset(&amp;st, 0, <span style="color: #b294bb;">sizeof</span>(st));
+</pre>
+</div>
+
+<p>
+Also, we forgot to define this; make sure to add it as well.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #b294bb;">if</span> (<span style="color: #c5c8c6; font-weight: bold;">!</span>st.output || <span style="color: #c5c8c6; font-weight: bold;">!</span>st.scrcopy || <span style="color: #c5c8c6; font-weight: bold;">!</span>st.shm) {
+  fprintf(stderr, <span style="color: #b5bd68;">"Could not found interfaces."</span>);
+  wl_display_disconnect(display);
+  <span style="color: #b294bb;">return</span>;
+}
+
+<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span> *<span style="color: #cc6666;">framed</span> = malloc(<span style="color: #b294bb;">sizeof</span>(<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span>));
+<span style="color: #81a2be;">memset</span>(framed, 0, <span style="color: #b294bb;">sizeof</span>(<span style="color: #b294bb;">struct</span> <span style="color: #f0c674;">frame_d</span>));
+framed-&gt;fd = -1;
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org3538278" class="outline-2">
+<h2 id="org3538278"><span class="section-number-2">2.</span> The End</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Since we've reached the end, it's essential to grasp the logic rather than just copy/paste the code. I wrote this simple document to help you understand the logic and create your own code. If it's not working, it means you haven't understood the logic!
+</p>
+
+<p>
+<b>Thank you for reading. My references are written in the repository's README.md section.</b>
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: 0l3d</p>
+<p class="date">Created: 2025-07-11 Fri 03:12</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
