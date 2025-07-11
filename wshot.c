@@ -11,6 +11,7 @@
 #include <wayland-client.h>
 #include <linux/memfd.h>
 #include "./wlr-screencopy-unstable-v1.h"
+#include "./xdg-output-unstable-v1.h"
 
 #ifndef MFD_CLOEXEC
 #define MFD_CLOEXEC 0x0001U
@@ -19,6 +20,8 @@
 #ifndef SYS_memfd_create
 #define SYS_memfd_create 319
 #endif
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 int ok = 0;
 
@@ -30,16 +33,33 @@ const char *help_message = "wshot v0.1.0\n"
                            "-c: Hide cursor.\n";
 
 
+
+struct Output {
+  struct wl_list link;
+  struct wl_output *output;
+  struct zxdg_output_v1 *xoutput;
+  int logical_x;
+  int logical_y;
+  int logical_w;
+  int logical_h;
+  char* name;
+};
+
 struct state {
   struct wl_output *output;
   struct wl_shm *shm;
   struct zwlr_screencopy_manager_v1 *scrcopy;
+  struct zxdg_output_manager_v1 *xdg_output_manager;
+  struct wl_list outputs;
+  struct zxdg_output_v1 *xdg_output;
+  struct Output *current_output;
 };
 
 struct Opts {
   char* output;
   int region;
   char* region_string;
+  char* output_name;
   int cursor;
   int wait;
   int stdout;
@@ -66,11 +86,15 @@ void reg_glob(
 	      uint32_t id, const char *interface, uint32_t version
 	      ) {
   if (strcmp(interface, "wl_output") == 0) {
-    st.output = wl_registry_bind(registry, id, &wl_output_interface, version);
+    struct Output *out = calloc(1, sizeof(struct Output));
+    out->output = wl_registry_bind(registry, id, &wl_output_interface, MIN(version, 4));
+    wl_list_insert(&st.outputs, &out->link);
   } else if (strcmp(interface, "wl_shm") == 0) {
     st.shm = wl_registry_bind(registry, id, &wl_shm_interface, version);
   } else if (strcmp(interface, "zwlr_screencopy_manager_v1") == 0) {
     st.scrcopy = wl_registry_bind(registry, id, &zwlr_screencopy_manager_v1_interface, version);
+  } else if (strcmp(interface, "zxdg_output_manager_v1") == 0) {
+    st.xdg_output_manager = wl_registry_bind(registry, id, &zxdg_output_manager_v1_interface, version);
   }
 }
 
@@ -264,15 +288,54 @@ struct zwlr_screencopy_frame_v1_listener frame_l = {
   .buffer_done = buffer_done,
 };
 
+void log_pos(void *data,
+	     struct zxdg_output_v1 *xdg_output, int32_t x, int32_t y) {
+  struct Output *out = data;
+  out->logical_x = x;
+  out->logical_y = y;
+}
+
+void log_siz(void *data,
+	      struct zxdg_output_v1 *xdg_output, int32_t w, int32_t h) {
+  struct Output *out = data;
+  out->logical_w = w;
+  out->logical_h = h;
+}
+
+void handle_done(void* data, struct zxdg_output_v1 *xdg_out) {}
+
+void handle_name(void *data,
+		 struct zxdg_output_v1 *xdg_output, const char *name) {
+  struct Output *out = data;
+  out->name = strdup(name);
+}
+void handle_des(void *data,
+		struct zxdg_output_v1 *xdg_output, const char *name) {}
+struct zxdg_output_v1_listener xdg_listener = {
+  .logical_position = log_pos,
+  .logical_size = log_siz,
+  .done = handle_done,
+  .name = handle_name,
+  .description = handle_des,
+};
+
 struct wl_display *display = NULL;
 struct wl_registry *registry = NULL;
 
 void capture_screenshot() {
   
-  if (!st.output || !st.scrcopy || !st.shm) {
+  if (!st.current_output || !st.scrcopy || !st.shm || !st.current_output->output) {
     fprintf(stderr, "Could not found interfaces.");
-    wl_display_disconnect(display);
     return;
+  }  
+  
+  struct Output *out;
+  opts.output_name = "DP-1";
+  wl_list_for_each(out, &st.outputs, link) {
+    if (out->name && strcmp(out->name, opts.output_name) == 0) {
+      st.current_output = out;
+      break;
+    }
   }
   
   struct frame_d *framed = malloc(sizeof(struct frame_d));
@@ -283,10 +346,10 @@ void capture_screenshot() {
   if (opts.region == 1) {
     int x, y, w, h;
     if (sscanf(opts.region_string, "%d,%d %dx%d", &x, &y, &w, &h) == 4) {
-          shot = zwlr_screencopy_manager_v1_capture_output_region(st.scrcopy, opts.cursor, st.output, x, y, w, h);   
+          shot = zwlr_screencopy_manager_v1_capture_output_region(st.scrcopy, opts.cursor, st.current_output->output, x, y, w, h);   
     }
   } else {
-    shot = zwlr_screencopy_manager_v1_capture_output(st.scrcopy, opts.cursor, st.output);
+    shot = zwlr_screencopy_manager_v1_capture_output(st.scrcopy, opts.cursor, st.current_output->output);
   }
   
   
@@ -312,23 +375,39 @@ int main (int argc, char* argv[]) {
     fprintf(stderr, "Unable to connect wayland display.");
     return 1;
   }
+  // wl_list_init(&st.outputs);
   registry = wl_display_get_registry(display);
-
+  wl_list_init(&st.outputs);
   wl_registry_add_listener(registry, &reg_listener, NULL);
   
   wl_display_roundtrip(display);
+  
   if (!st.shm) {
     fprintf(stderr, "Error: st.shm is NULL after roundtrip!\n");
     wl_display_disconnect(display);
     return 1;
   }
+
+  if (wl_list_empty(&st.outputs)) {
+    fprintf(stderr, "No outputs found in registry!\n");
+    return 1;
+  }
+  
+  struct Output *out = wl_container_of(st.outputs.next, out, link);
+  st.current_output = out;
+  
+  if (st.xdg_output_manager) {
+    st.xdg_output = zxdg_output_manager_v1_get_xdg_output(st.xdg_output_manager, st.current_output->output);
+    zxdg_output_v1_add_listener(st.xdg_output, &xdg_listener, st.current_output);
+  }
+  
   opts.cursor = 1;
   opts.wait = 0;
   opts.stdout = 0;
   opts.output = "screenshot.png";
   int opt;
   int x, y, w, h;
-  while((opt = getopt(argc, argv, "sho:r:w:c")) != -1) {
+  while((opt = getopt(argc, argv, "sho:r:m:w:c")) != -1) {
     switch (opt) {
     case 'h':
       printf("%s", help_message);
@@ -348,11 +427,13 @@ int main (int argc, char* argv[]) {
       break;
     case 'w':
       opts.wait = atoi(optarg);
+    case 'm':
+      opts.output_name = optarg;
     }
   }
   
   capture_screenshot();
-
+  
   
   wl_display_disconnect(display);
   return 0; 
