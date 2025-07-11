@@ -2,7 +2,7 @@
 
 Minimal screenshot utility for wayland with C.
 
-Work in progress: You can also check out [“How to build a simple screenshot tool for Wayland.”]() 
+You can also check out [“How to build a simple screenshot tool for Wayland.”](https://0l3d.github.io/wshot/) 
 
 ## FEATURES
 - Region selection with slurp. `wshot -r "$(slurp)"`
