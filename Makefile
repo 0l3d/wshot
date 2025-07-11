@@ -15,6 +15,8 @@ XDG_SOURCE = xdg-output-unstable-v1.c
 
 all: $(HEADER_FILE) $(SOURCE_FILE) $(XDG_HEADER) $(XDG_SOURCE) $(TARGET) cleansrc
 
+dev: $(HEADER_FILE) $(SOURCE_FILE) $(XDG_HEADER) $(XDG_SOURCE) $(TARGET)
+
 $(HEADER_FILE):
 	wayland-scanner client-header $(PROTOCOL_XML) $(HEADER_FILE)
 

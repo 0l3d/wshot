@@ -308,6 +308,10 @@ void handle_name(void *data,
 		 struct zxdg_output_v1 *xdg_output, const char *name) {
   struct Output *out = data;
   out->name = strdup(name);
+  if (out->name == NULL) {
+    fprintf(stderr, "strdup memory allocation error.");
+    return; 
+  }
 }
 void handle_des(void *data,
 		struct zxdg_output_v1 *xdg_output, const char *name) {}
@@ -330,13 +334,14 @@ void capture_screenshot() {
   }  
   
   struct Output *out;
-  opts.output_name = "DP-1";
+  memset(&out, 0, sizeof(out));
   wl_list_for_each(out, &st.outputs, link) {
     if (out->name && strcmp(out->name, opts.output_name) == 0) {
       st.current_output = out;
       break;
     }
   }
+
   
   struct frame_d *framed = malloc(sizeof(struct frame_d));
   memset(framed, 0, sizeof(struct frame_d));
@@ -361,13 +366,14 @@ void capture_screenshot() {
   
   zwlr_screencopy_frame_v1_add_listener(shot, &frame_l, framed);
   while(wl_display_dispatch(display) != -1) {
-      if (ok == 1) {
-	break;
-     }
+    if (ok == 1) {
+      break;
+    }
   }
 }
 
 int main (int argc, char* argv[]) {
+  opts.output_name = "";
   opts.region = 0;
   memset(&st, 0, sizeof(st));
   display = wl_display_connect(NULL);
@@ -392,13 +398,21 @@ int main (int argc, char* argv[]) {
     fprintf(stderr, "No outputs found in registry!\n");
     return 1;
   }
+
+  //  int list_lenght = wl_list_length(&st.outputs);
+
+  // printf("List Lenght : %d\n", list_lenght);
   
   struct Output *out = wl_container_of(st.outputs.next, out, link);
   st.current_output = out;
   
   if (st.xdg_output_manager) {
-    st.xdg_output = zxdg_output_manager_v1_get_xdg_output(st.xdg_output_manager, st.current_output->output);
-    zxdg_output_v1_add_listener(st.xdg_output, &xdg_listener, st.current_output);
+    struct Output *out;
+    wl_list_for_each(out, &st.outputs, link) {
+      out->xoutput = zxdg_output_manager_v1_get_xdg_output(st.xdg_output_manager, out->output);
+      zxdg_output_v1_add_listener(out->xoutput, &xdg_listener, out);
+    }
+    wl_display_roundtrip(display);
   }
   
   opts.cursor = 1;
