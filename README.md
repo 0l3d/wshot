@@ -10,6 +10,8 @@ You can also check out [“How to build a simple screenshot tool for Wayland.”
 - Output file name selection. `wshot -o <filename>`
 - Delay before taking the screenshot. `wshot -w 5 # 5 seconds`  
 - Usage with wl-copy: region `wshot -s -r "$(slurp)" | wl-copy` or fullscreen `wshot -s | wl-copy`  
+- Multiple Monitor Support (not works with slurp): `wshot -m <Monitor Name>`
+
 You might be thinking, 'These aren't features!'
 
 Yes, these really aren't features — because for a screenshot program, these are simply all I need.
