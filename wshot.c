@@ -92,7 +92,7 @@ void save_png(struct frame_d *framed) {
     opts.output = "-";
   }
   
-  FILE *file = fopen(opts.output, "wb");
+  FILE *file;
   if (opts.stdout == 1) {
     file = stdout;
   } else {
@@ -150,8 +150,10 @@ void save_png(struct frame_d *framed) {
   free(row_pointers);
 
   png_destroy_write_struct(&png_ptr, &info_ptr);
-  fclose(file);
-  printf("Screenshot saved succesfully");
+  if (file != stdout) {
+    fclose(file);
+    printf("Screenshot saved successfully\n");
+  }
 }
 
 
@@ -323,10 +325,10 @@ int main (int argc, char* argv[]) {
   opts.cursor = 1;
   opts.wait = 0;
   opts.stdout = 0;
-  opts.output = "";
+  opts.output = "screenshot.png";
   int opt;
   int x, y, w, h;
-  while((opt = getopt(argc, argv, "ho:r:w:cs")) != -1) {
+  while((opt = getopt(argc, argv, "sho:r:w:c")) != -1) {
     switch (opt) {
     case 'h':
       printf("%s", help_message);
@@ -337,17 +339,16 @@ int main (int argc, char* argv[]) {
     case 'o':
       opts.output = optarg;
       break;
-    case 's':
-      opts.stdout = 1;
-      break;
     case 'r':
       opts.region = 1;
       opts.region_string = optarg;
       break;
+    case 's':
+      opts.stdout = 1;
+      break;
     case 'w':
       opts.wait = atoi(optarg);
     }
-    break;
   }
   
   capture_screenshot();

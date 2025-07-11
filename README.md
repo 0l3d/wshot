@@ -9,6 +9,7 @@ You can also check out [“How to build a simple screenshot tool for Wayland.”
 - Hide cursor when screenshot. `wshot -c`
 - Output file name selection. `wshot -o <filename>`
 - Delay before taking the screenshot. `wshot -w 5 # 5 seconds`  
+- Usage with wl-copy: region `wshot -s -r "$(slurp)" | wl-copy` or fullscreen `wshot -s | wl-copy`  
 You might be thinking, 'These aren't features!'
 
 Yes, these really aren't features — because for a screenshot program, these are simply all I need.
