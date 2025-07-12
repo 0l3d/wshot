@@ -13,7 +13,7 @@ SOURCE_FILE = wlr-screencopy-unstable-v1.c
 XDG_HEADER = xdg-output-unstable-v1.h
 XDG_SOURCE = xdg-output-unstable-v1.c
 
-all: $(HEADER_FILE) $(SOURCE_FILE) $(XDG_HEADER) $(XDG_SOURCE) $(TARGET) cleansrc
+all: $(HEADER_FILE) $(SOURCE_FILE) $(XDG_HEADER) $(XDG_SOURCE) $(TARGET) minimize cleansrc
 
 dev: $(HEADER_FILE) $(SOURCE_FILE) $(XDG_HEADER) $(XDG_SOURCE) $(TARGET)
 
@@ -33,6 +33,9 @@ $(TARGET): $(OBJECTS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+minimize:
+	strip $(TARGET)
 
 cleansrc:
 	rm -f $(OBJECTS) $(SOURCE_FILE) $(HEADER_FILE) $(XDG_HEADER) $(XDG_SOURCE)
