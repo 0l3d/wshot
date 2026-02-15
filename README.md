@@ -17,7 +17,7 @@ Yes, these really aren't features — because for a screenshot program, these ar
 
 ## Usage
 ```bash
-git clone https://github.com/0l3d/wshot.git
+git clone https://git.sr.ht/~oled/wshot
 make
 ./wshot -h
 ```
@@ -26,7 +26,7 @@ make
 This project is licensed under the **GPL-3.0 License**.
 
 ## Author 
-Created by **0l3d**
+Created by **oled**
 
 # REFERANCES
 - Wayland Docs: *https://wayland.freedesktop.org/docs/html/*
